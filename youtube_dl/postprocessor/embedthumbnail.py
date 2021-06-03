@@ -29,6 +29,7 @@ class EmbedThumbnailPP(FFmpegPostProcessor):
 
     def run(self, info):
         filename = info['filepath']
+        filename_ext = os.path.splitext(filename)[1]
         temp_filename = prepend_extension(filename, 'temp')
 
         if not info.get('thumbnails'):
@@ -74,7 +75,7 @@ class EmbedThumbnailPP(FFmpegPostProcessor):
             os.rename(encodeFilename(escaped_thumbnail_jpg_filename), encodeFilename(thumbnail_jpg_filename))
             thumbnail_filename = thumbnail_jpg_filename
 
-        if info['ext'] == 'mp3':
+        if filename_ext == '.mp3':
             options = [
                 '-c', 'copy', '-map', '0', '-map', '1',
                 '-metadata:s:v', 'title="Album cover"', '-metadata:s:v', 'comment="Cover (Front)"']
@@ -88,7 +89,7 @@ class EmbedThumbnailPP(FFmpegPostProcessor):
             os.remove(encodeFilename(filename))
             os.rename(encodeFilename(temp_filename), encodeFilename(filename))
 
-        elif info['ext'] in ['m4a', 'mp4']:
+        elif filename_ext in ['.m4a', '.mp4']:
             atomicparsley = next((x
                                   for x in ['AtomicParsley', 'atomicparsley']
                                   if check_executable(x, ['-v'])), None)
@@ -124,7 +125,31 @@ class EmbedThumbnailPP(FFmpegPostProcessor):
             else:
                 os.remove(encodeFilename(filename))
                 os.rename(encodeFilename(temp_filename), encodeFilename(filename))
+                
+        elif filename_ext in ['.mkv', '.mka']:
+            try:
+                os.remove('cover.jpg')
+            except OSError:
+                pass
+            os.rename(encodeFilename(thumbnail_filename), encodeFilename('cover.jpg'))
+            old_thumbnail_filename = thumbnail_filename
+            thumbnail_filename = 'cover.jpg'
+
+            options = [
+                '-c', 'copy', '-attach', thumbnail_filename, '-metadata:s:t', 'mimetype=image/jpeg']
+
+            self._downloader.to_screen('[ffmpeg] Adding thumbnail to "%s"' % filename)
+
+            self.run_ffmpeg_multiple_files([filename], temp_filename, options)
+
+            if not self._already_have_thumbnail:
+                os.remove(encodeFilename(thumbnail_filename))
+            else:
+                os.rename(encodeFilename(thumbnail_filename), encodeFilename(old_thumbnail_filename))
+            os.remove(encodeFilename(filename))
+            os.rename(encodeFilename(temp_filename), encodeFilename(filename))
+
         else:
-            raise EmbedThumbnailPPError('Only mp3 and m4a/mp4 are supported for thumbnail embedding for now.')
+            raise EmbedThumbnailPPError('Only mkv, mka, mp4, m4a, mp3 are supported for thumbnail.')
 
         return [], info
