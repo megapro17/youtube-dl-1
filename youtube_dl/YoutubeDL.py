@@ -1088,7 +1088,7 @@ class YoutubeDL(object):
             '!=': operator.ne,
         }
         operator_rex = re.compile(r'''(?x)\s*
-            (?P<key>width|height|tbr|abr|vbr|asr|filesize|filesize_approx|fps)
+            (?P<key>width|height|vertical|tbr|abr|vbr|asr|filesize|filesize_approx|fps)
             \s*(?P<op>%s)(?P<none_inclusive>\s*\?)?\s*
             (?P<value>[0-9.]+(?:[kKmMgGtTpPeEzZyY]i?[Bb]?)?)
             $
@@ -1628,6 +1628,8 @@ class YoutubeDL(object):
             full_format_info = info_dict.copy()
             full_format_info.update(format)
             format['http_headers'] = self._calc_headers(full_format_info)
+            if format['width'] and format['height']:
+                format['vertical'] = int(format['width'] < format['height'])
         # Remove private housekeeping stuff
         if '__x_forwarded_for_ip' in info_dict:
             del info_dict['__x_forwarded_for_ip']
