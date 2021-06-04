@@ -1628,8 +1628,9 @@ class YoutubeDL(object):
             full_format_info = info_dict.copy()
             full_format_info.update(format)
             format['http_headers'] = self._calc_headers(full_format_info)
-            if format['width'] and format['height']:
-                format['vertical'] = int(format['width'] < format['height'])
+            if 'width' in format and 'height' in format:
+                if format['width'] and format['height']:
+                    format['vertical'] = int(format['width'] < format['height'])
         # Remove private housekeeping stuff
         if '__x_forwarded_for_ip' in info_dict:
             del info_dict['__x_forwarded_for_ip']
