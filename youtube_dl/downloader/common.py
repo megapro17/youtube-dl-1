@@ -219,7 +219,10 @@ class FileDownloader(object):
         if filetime == 0:
             return
         try:
-            os.utime(filename, (time.time(), filetime))
+            name = os.path.splitext(filename)[0]
+            for i in os.listdir():
+                if name in i:
+                    os.utime(i, (time.time(), filetime))
         except Exception:
             pass
         return filetime
